@@ -5,6 +5,7 @@ from typing import List
 from .. import crud, schemas, models
 from ..deps import get_db
 from ..esi import EsiClient
+from ..security import get_current_character
 
 router = APIRouter(prefix="/characters", tags=["characters"])
 
@@ -26,10 +27,19 @@ def get_character(character_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{character_id}/sync_jobs", response_model=List[schemas.JobBase])
-def sync_character_jobs(character_id: int, include_completed: bool = False, db: Session = Depends(get_db)):
+def sync_character_jobs(
+    character_id: int,
+    include_completed: bool = False,
+    db: Session = Depends(get_db),
+    current_char: models.Character = Depends(get_current_character),
+):
     db_char = crud.get_character(db, character_id)
     if not db_char:
         raise HTTPException(status_code=404, detail="Character not found")
+
+    # Ensure requester matches character or is admin (admin logic TBD)
+    if current_char.id != character_id:
+        raise HTTPException(status_code=403, detail="Not allowed")
 
     esi_client = EsiClient(access_token=db_char.access_token)
     try:

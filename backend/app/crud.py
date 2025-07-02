@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from . import models
 from . import schemas
 from typing import List
+from datetime import datetime, timedelta
 
 
 def get_character(db: Session, character_id: int) -> models.Character | None:
@@ -40,3 +41,13 @@ def upsert_job(db: Session, job_data: dict, character_id: int, corporation_id: i
     db.commit()
     db.refresh(db_job)
     return db_job
+
+
+def update_character_tokens(db: Session, character: models.Character, access_token: str, refresh_token: str, expires_in: int):
+    character.access_token = access_token
+    character.refresh_token = refresh_token
+    character.token_expiry = datetime.utcnow() + timedelta(seconds=expires_in)
+    db.add(character)
+    db.commit()
+    db.refresh(character)
+    return character

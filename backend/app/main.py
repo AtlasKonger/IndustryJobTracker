@@ -1,13 +1,14 @@
 import uvicorn
 from fastapi import FastAPI
 from .database import Base, engine
-from .routers import characters, jobs
+from .routers import characters, jobs, auth
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EVE Online Industrial Tracker", version="0.1.0")
 
+app.include_router(auth.router)
 app.include_router(characters.router)
 app.include_router(jobs.router)
 
